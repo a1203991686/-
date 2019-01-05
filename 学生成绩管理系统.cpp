@@ -1,1507 +1,1585 @@
-#include "stdafx.h"
-#include "string.h"
-#include "stdlib.h"
-#include "windows.h"
+#include"stdio.h"
+#include"stdlib.h"
+#include"windows.h"
+#include"string.h"
+void teacher(struct student *head, struct login_t *head_t, char username[20]);//老师端打印项目
+void administrator(struct student *head, struct login_a *head_a, char username[20]);//管理员端打印项目
+void student_1(struct student *head);//学生端打印项目
+void logininf(struct student *head, struct login_a *head_a, char username[20]);//登录信息修改打印项目
+struct student *create();//创建信息链表
+struct student *inf_1();//从文件读入信息到链表
+struct student *find(struct student *head, char num[9]);//查找
+void change_1(struct student *head, char num[9]);//修改
+void delete_1(struct student *head, char num[9]);//删除
+void ywsort(struct student *head);//语文排序
+void sxsort(struct student *head);//数学排序
+void yysort(struct student *head);//英语排序
+void numsort(struct student *head);//学号排序
+void sort_1(struct student *head, struct login_a *head_a, struct login_t *head_t, char username[20]);//排序界面打印
+void chaxun(struct student *head, char num[9]);//查询信息
+void insert(struct student *head);//增加信息
+void save_1(struct student *head);//保存到文件
+void output();//打印所有项目
 
-#define superadmin d:/1/superadmin.txt
-#define superadmin_a d:/1/superadmin_a.txt
+char *login_l_a(struct login_a *head_a, char username[20]);//管理员登陆页面
+struct login_a *create_a();//创建管理员登陆链表
+struct login_a *find_l(struct login_a *head_a, char username[20]);//查询管理员登陆账号
+struct login_a *inf_l_a();//管理员密码文件信息录入链表
+void insert_l_a(struct login_a *head_a);//增加管理员登录链表节点
+void delete_1(struct login_a *head_a, char username[20]);//删除账户
+void change_l_a(struct login_a *head_a, char username[20]);//修改管理员密码
+void save_2(struct login_a *head_a);//管理员登陆文件保存
 
-/*
- * 部员数目不定，所以使用链表
- * 部长固定6人，使用数组
- * 主席固定1人
- * 超级管理员固定一个账户
-*/
+char *login_l_t(struct login_t *head_t, char username[20]);
+struct login_t *create_t();//创建老师登陆链表
+struct login_t *inf_l_t();//老师密码文件信息录入链表
+struct login_t *find_2(struct login_t *head_t, char username[20]);//查询老师登陆账号
+void delete_2(struct login_t *head_t, char username[20]);//删除老师账户
+void insert_l_t(struct login_t *head_t);//增加老师登录链表节点
+void change_l_t(struct login_t *head_t, char username[20]);//修改老师密码
+void save_3(struct login_t *head_t);//老师登陆文件保存
 
-char department1[6][7] = { "办公室", "外联", "宣传", "组织", "文艺", "财政" };
+int count_x = 0;
 
-struct birthday //出生日期
+struct student
 {
-	int year;
-	int month;
-	int day;
+	char num[9];   //学号
+	char name[9];  //姓名
+	char class1[5];//班级
+	int yw;        //语文成绩
+	int sx;        //数学成绩
+	int yy;        //英语成绩
+	struct student *next;
 };
 
-typedef struct champion //主席信息
+struct login_a //管理员账号密码
 {
-	char num[9];         //学号
-	char name[9];        //姓名
-	char college[21];	 //院系
-	char class1[9];      //班级
-	struct birthday day; //出生日期
-} CHM;
+	char username[20];
+	char password[20];
+	struct login_a *next;
+};
 
-CHM chm; //定义一个变量
-
-typedef struct minister //部长信息
+struct login_t
 {
-	char num[9];         //学号
-	char name[9];        //姓名
-	char college[21];	 //院系
-	char class1[9];      //班级
-	struct birthday day; //出生日期
-	char department[7];  //部门
-} MIN;
+	char username[20];
+	char password[20];
+	struct login_t *next;
+};
 
-//0办公室，1外联，2宣传，3组织，4文艺，5财政
-MIN min[6]; //一个部一个部长，一共6个部
-
-typedef struct staff //部员信息
+struct student *create()
 {
-	char num[9];         //学号
-	char name[9];        //姓名
-	char college[21];	 //院系
-	char class1[9];      //班级
-	struct birthday day; //出生日期
-	char department[7]; //部门
-	struct staff *next;
-} STA;
-
-/*
-* USR —— 用户名
-* PW —— 密码
-*/
-typedef struct superadmin_account //超级管理员账户
-{
-	char USR[9];	 //账号
-	char PW[20]; //密码
-} SU_a;
-
-SU_a su_a;
-
-typedef struct champion_account //主席账号
-{
-	char USR[9];	 //账号
-	char PW[20]; //密码
-} CHM_a;
-
-CHM_a chm_a;
-
-typedef struct minister_account //部长账户
-{
-	char USR[9];
-	char PW[20];
-} MIN_a;
-
-MIN_a min_a[6]; //与部长对应
-
-typedef struct staff_account //部员账户
-{
-	char USR[9];	 //账号
-	char PW[20]; //密码
-	struct staff_account *next;
-} STA_a;
-
-void show_1(); //主页面
-void choose_1(STA *head_s, STA_a *head_s_a); //选择选项
-void show_su_1(); //超级管理员选单
-void choose_su_1(); //超级管理员选单选项
-void show_c_1(); //主席主选单
-void choose_c_1(STA *head_s, STA_a *head_s_a); //主席主选单选项
-void show_c_2(); //主席登录信息操作选单
-void choose_c_2(STA *head_s, STA_a *head_s_a); //主席登录信息操作选单选项
-void show_m_1(); //部长主选单
-void choose_m_1(STA *head_s, STA_a *head_s_a, char USR[]); //部长主选单选项
-void show_s_1(); //部员选单
-void choose_s_1(STA *head_s, STA_a *head_s_a, char USR[]); //部员选单选项
-
-void login_su(); //超级管理员-登录界面
-void inf_su_a(); // 超级管理员账户-文件读取
-
-STA *create_s(STA *head_s, STA_a *head_s_a); //部员-创建
-STA *find_s(STA *head_s, char num[]); //部员-查找
-STA *insert_s(STA *head_s); //部员-头插法
-void delete_s(STA *head_s, STA_a *head_s_a, char num[]); //部员-删除
-void change_s(STA *head_s, char num[]); //部员-修改
-void output_s(STA *head_s); //部员-输出
-void login_s(STA_a *head_s_a, char USR[]); //部员-登录界面
-void save_s(STA *head_s); //部员-文件保存
-STA *inf_s();  //部员-文件读取
-STA_a *create_s_a(STA_a *head_s_a, STA *head_s); //部员账户-创建
-STA_a *find_s_a(STA_a *head_s_a, char num[]); //部员账户-查找
-void deleter_s_a(STA_a *head_s_a, char num[]); //部员账户-删除
-void change_s_a(STA_a *head_s_a, char num[]); //部员账户-修改
-void save_s_a(STA_a *head_s_a); //部员账户-文件保存
-STA_a *inf_s_a();  //部员账户-文件读取
-
-void create_m(STA *head_s, STA_a *head_s_a); //部长-新建
-void deleter_m(char num[]); //部长-删除
-int find_m(char num[]); //部长-查找
-void change_m(char num[]); //部长-修改
-void output_m(); //部长-输出
-void save_m(); //部长-文件保存
-void inf_m(); //部长-文件读取
-void create_m_a(char num[], int i); //部长账户-创建
-int find_m_a(char num[]); //部长账户-查找
-void change_m_a(char USR[]); //部长账号-修改
-void deleter_m_a(char num[]); //部长账号-删除
-void save_m_a(); //部长账户-文件保存
-void inf_m_a();  //部长账户-文件读取
-void login_m(char USR[]); //部长-登录界面
-
-void create_c(); //主席-创建
-void deleter_c(); //主席-删除
-void change_c(); //主席-修改
-void save_c(); //主席-文件保存
-void inf_c(); //主席-文件读取
-void login_c(); //主席-登录界面
-void create(char num[]); // 主席账户-创建
-void deleter_c_a(); //主席账户-删除
-void change_c_a(); //主席账户-修改
-void save_c_a(); //主席-文件保存
-void inf_c_a(); //主席-文件读取
-
-int count_m, count_c;
-
-void show_1() //主页面
-{
-	printf("\t\t\t************************************************\n");
-	printf("\t\t\t\t欢迎进入大学生社团学生信息管理系统!!!\n");
-	printf("\t\t\t\t\t1. 主席\n");
-	printf("\t\t\t\t\t2. 部长\n");
-	printf("\t\t\t\t\t3. 部员\n");
-	printf("\t\t\t\t\t0. 退出系统\n");
-	printf("\t\t\t\t请输入您的身份(0~3):");
-}
-
-void choose_1(STA *head_s, STA_a *head_s_a) //选择选项
-{
-	while (1)
-	{
-		system("cls");
-		show_1();
-		char a;
-		scanf("%c", &a);
-		while (a > '4' || a < '0')
-		{
-			system("cls");
-			show_1();
-			printf("\t\t\t\t对不起，您输入有误，请重新输入(0~3):");
-			scanf("%c", &a);
-		}
-		switch (a)
-		{
-			char USR[9], PW[20];
-		case '1':
-			login_c();
-			choose_c_1(head_s, head_s_a);
-			break;
-		case '2':
-			setbuf(stdin, NULL);
-			printf("请输入账号\n");
-			scanf("%s", USR);
-			login_m(USR);
-			choose_m_1(head_s, head_s_a, USR);
-			break;
-		case '3':
-			setbuf(stdin, NULL);
-			printf("请输入账号\n");
-			scanf("%s", USR);
-			login_s(head_s_a, USR);
-			choose_s_1(head_s, head_s_a, USR);
-			break;
-		case '4':
-			login_su();
-			choose_su_1();
-			break;
-		case '0':
-			printf("正在退出请稍后!!!\n");
-			Sleep(1000);
-			exit(0);
-			break;
-		}
-	}
-}
-
-void show_su_1() //超级管理员选单
-{
-	printf("\t\t\t************************************************\n");
-	printf("\t\t\t\t\t\t超级管理员选单\n");
-	printf("\t\t\t\t\t1. 新建主席信息\t2. 修改主席信息\n");
-	printf("\t\t\t\t\t3. 修改主席密码\t4. 删除主席信息\n");
-	printf("\t\t\t\t\t0. 退出系统\n ");
-	printf("\t\t\t\t请输入您需要的功能(0~4):");
-}
-
-void choose_su_1() //超级管理员选单选项
-{
-	while (1)
-	{
-		system("cls");
-		show_su_1();
-		char a;
-		scanf("%c", &a);
-		while (a > '4' || a < '0')
-		{
-			system("cls");
-			// system("cls");
-			show_su_1();
-			printf("\t\t\t\t对不起，您输入有误，请重新输入(0~4):");
-			scanf("%c", &a);
-		}
-		switch (a)
-		{
-		case '1':
-			create_c();
-			break;
-		case '2':
-			change_c();
-			break;
-		case '3':
-			change_c_a();
-			break;
-		case '4':
-			deleter_c();
-			break;
-		case '0':
-			printf("正在退出请稍后!!!\n");
-			// sleep(1000);
-			Sleep(1000);
-			exit(0);
-			break;
-		}
-	}
-}
-
-void show_c_1() //主席主选单
-{
-	printf("\t\t\t************************************************\n");
-	printf("\t\t\t\t\t\t主席选单\n");
-	printf("\t\t\t\t\t1. 新建部员信息\t2. 增加部员信息\n");
-	printf("\t\t\t\t\t3. 修改部员信息\t4. 删除部员信息\n");
-	printf("\t\t\t\t\t5. 设置为部长\t6. 修改部长信息\n");
-	printf("\t\t\t\t\t7. 删除部长信息\t8.输出部长信息\n");
-	printf("\t\t\t\t\t9. 输出部员信息\t0. 退出系统\n");
-	printf("\t\t\t\t\tx. 登陆信息操作\n ");
-	printf("\t\t\t\t请输入您需要的功能(0~9):");
-}
-
-void choose_c_1(STA *head_s, STA_a *head_s_a) //主席主选单选项
-{
-	while (1)
-	{
-		head_s = inf_s();
-		head_s_a = inf_s_a();
-		setbuf(stdin, NULL);
-		system("cls");
-		show_c_1();
-		char a;
-		scanf("%c", &a);
-		while ((a > '9' || a < '0') && a != 'x')
-		{
-			system("cls");
-			show_c_1();
-			printf("\t\t\t\t对不起，您输入有误，请重新输入(0~9):");
-			scanf("%c", &a);
-		}
-		switch (a)
-		{
-			char num[9];
-		case '1':
-			head_s = create_s(head_s, head_s_a);
-			save_s(head_s);
-			break;
-		case '2':
-			head_s = insert_s(head_s);
-			save_s(head_s);
-			break;
-		case '3':
-			setbuf(stdin, NULL);
-			printf("请输入学号\n");
-			scanf("%s", num);
-			change_s(head_s,num);
-			save_s(head_s);
-			break;
-		case '4':
-			setbuf(stdin, NULL);
-			printf("请输入需要删除的学号\n");
-			scanf("%s", num);
-			delete_s(head_s, head_s_a, num);
-			break;
-		case '5':
-			create_m(head_s, head_s_a);
-			break;
-		case '6':
-			setbuf(stdin, NULL);
-			printf("请输入需要修改的部长的学号\n");
-			scanf("%s", num);
-			change_m(num);
-			break;
-		case '7':
-			setbuf(stdin, NULL);
-			printf("请输入需要删除的学号");
-			scanf("%s", num);
-			deleter_m(num);
-			save_m();
-			break;
-		case '8':
-			output_m();
-			break;
-		case '9':
-			head_s = inf_s();
-			output_s(head_s);
-			getchar();
-			break;
-		case '0':
-			printf("正在退出请稍后!!!\n");
-			// sleep(1000);
-			Sleep(1000);
-			exit(0);
-			break;
-		case 'x':
-			choose_c_2(head_s, head_s_a);
-			break;
-		}
-	}
-}
-
-void show_c_2() //主席登录信息操作选单
-{
-	printf("\t\t\t*************************************************\n");
-	printf("\t\t\t\t\t\t主席登陆信息操作选单\n");
-	printf("\t\t\t\t\t1.修改部长密码\n");
-	printf("\t\t\t\t\t2.创建部员账号\t3. 修改部员密码\n");
-	printf("\t\t\t\t\t4. 修改自己密码\t5. 返回上一级\n");
-	printf("\t\t\t\t请输入您需要的功能(1~5):");
-}
-
-void choose_c_2(STA *head_s, STA_a *head_s_a) //主席登录信息操作选单选项
-{
-	while (1)
-	{
-		setbuf(stdin, NULL);
-		system("cls");
-		show_c_2();
-		char a;
-		scanf("%c", &a);
-		while (a > '5' || a < '1')
-		{
-			system("cls");
-			// system("cls");
-			show_c_2();
-			printf("\t\t\t\t对不起，您输入有误，请重新输入(1~5):");
-			scanf("%c", &a);
-		}
-		switch (a)
-		{
-		case '1':
-			setbuf(stdin, NULL);
-			char USR[9];
-			printf("请输入需要修改的学号\n");
-			scanf("%s", USR);
-			change_m_a(USR);
-			break;
-		case '2':
-
-			head_s_a = create_s_a(head_s_a, head_s);
-			save_s_a(head_s_a);
-			break;
-		case '3':
-			setbuf(stdin, NULL);
-			char num[9];
-			printf("请输入学号");
-			scanf("%s", num);
-			change_s_a(head_s_a, num);
-			break;
-		case '4':
-			change_c_a();
-			break;
-		case '5':
-			choose_c_1(head_s, head_s_a);
-			break;
-		}
-	}
-}
-
-void show_m_1() //部长主选单
-{
-	printf("\t\t\t*************************************************\n");
-	printf("\t\t\t\t\t\t部长主选单\n");
-	printf("\t\t\t\t\t1. 新建本部学生信息\t2. 加入本部学生信息\t3. 修改本部学生信息\n");
-	printf("\t\t\t\t\t4. 删除本部学生信息\t5. 修改自己信息\t6. 修改自己密码\n");
-	printf("\t\t\t\t\t7. 修改部员密码\t0. 退出\n");
-	printf("\t\t\t\t请输入您需要的功能(0~7):");
-}
-
-void choose_m_1(STA *head_s, STA_a *head_s_a, char USR[]) //部长主选单选项
-{
-	while (1)
-	{
-		setbuf(stdin, NULL);
-		system("cls");
-		show_m_1();
-		char a;
-		scanf("%c", &a);
-		getchar();
-		while (a > '7' || a < '0')
-		{
-			system("cls");
-			// system("cls");
-			show_m_1();
-			printf("\t\t\t\t对不起，您输入有误，请重新输入(0~7):");
-			scanf("%c", &a);
-			getchar();
-		}
-		switch (a)
-		{
-			char num[9];
-		case '1':
-			head_s = create_s(head_s, head_s_a);
-			save_s(head_s);
-			break;
-		case '2':
-			head_s = insert_s(head_s);
-			save_s(head_s);
-			break;
-		case '3':
-			setbuf(stdin, NULL);
-			printf("请输入学号\n");
-			scanf("%s", num);
-			change_s(head_s, num);
-			break;
-		case '4':
-			setbuf(stdin, NULL);
-			printf("请输入需要删除的学号\n");
-			scanf("%s", num);
-			delete_s(head_s, head_s_a, num);
-			break;
-		case '5':
-			change_m(USR);
-			break;
-		case '6':
-			change_m_a(USR);
-			break;
-		case '7':
-			setbuf(stdin, NULL);
-			printf("请输入学号");
-			scanf("%s", num);
-			change_s_a(head_s_a,num);
-			break;
-		case '0':
-			printf("正在退出请稍后!!!\n");
-			// sleep(1000);
-			Sleep(1000);
-			exit(0);
-			break;
-		}
-	}
-}
-
-void show_s_1() //部员选单
-{
-	printf("\t\t\t*************************************************\n");
-	printf("\t\t\t\t\t\t部员主选单\n");
-	printf("\t\t\t\t\t1. 修改自己信息\t2. 修改自己密码\n");
-	printf("\t\t\t\t\t0. 退出\n");
-	printf("\t\t\t\t请输入您需要的功能(0~2):");
-}
-
-void choose_s_1(STA *head_s, STA_a *head_s_a, char USR[]) //部员选单选项
-{
-	while (1)
-	{
-		setbuf(stdin, NULL);
-		system("cls");
-		show_s_1();
-		char a;
-		scanf("%c", &a);
-		while (a > '2' || a < '0')
-		{
-			system("cls");
-			// system("cls");
-			show_s_1();
-			printf("\t\t\t\t对不起，您输入有误，请重新输入(0~2):");
-			scanf("%c", &a);
-		}
-		switch (a)
-		{
-		case '1':
-			change_s(head_s, USR);
-			break;
-		case '2':
-			change_s_a(head_s_a, USR);
-			break;
-		case '0':
-			printf("正在退出请稍后!!!\n");
-			// sleep(1000);
-			Sleep(1000);
-			exit(0);
-			break;
-		}
-	}
-}
-
-void login_su() //超级管理员-登录界面
-{
-	setbuf(stdin, NULL);
-	char USR[9], PW[20];
-	printf("请输入账号\n");
-	scanf("%s", USR);
-	getchar();
-	if (!strcmp(USR, su_a.USR))
-	{
-		printf("请输入密码\n");
-		scanf("%s", PW);
-		int count = 0;
-		count++;
-		while (strcmp(PW, su_a.PW))
-		{
-			printf("密码输入错误，还有%d次机会，请重新输入\n", 3 - count);
-			scanf("%s", PW);
-			count++;
-			getchar();
-			if (3 - count == 0)
-			{
-				printf("密码输入错误超过三次，正在退出系统!!!\n");
-				Sleep(1000);
-				exit(0);
-			}
-		}
-	}
-	else
-	{
-		printf("没有找到此账号\n返回上一步\n");
-		Sleep(1000);
-	}
-}
-
-void inf_su_a() // 超级管理员账户-文件读取
-{
-	FILE *fp;
-	fp = fopen("d:/superadmin_a.txt", "rt+");
-	if (fp == NULL)
-	{
-		printf("d:/superadmin_a.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	fscanf(fp, "%s %s", su_a.USR, su_a.PW);
-	fclose(fp);
-}
-
-STA *create_s(STA *head_s, STA_a *head_s_a) //部员-创建
-{
-	STA *p, *q;
-	head_s = NULL;
-	STA_a *p1, *p2;
-	head_s_a = NULL;
-	printf("请输入需要新建的学生信息的人数：");
-	int n, i;
+	struct student *head, *p, *q;
+	char num[9];    //学号
+	char name[9];   //姓名
+	char class1[5]; //班级
+	int yw;			//语文成绩
+	int sx;			//数学成绩
+	int yy;			//英语成绩
+	head = NULL;
+	int i, n, j;
+	printf("请输入学生人数：");
 	scanf("%d", &n);
 	for (i = 0; i < n; i++)
 	{
-		p = (STA *)malloc(sizeof(STA));
-		printf("请输入第%d名同学学号\n", i + 1);
-		char num[9];	  //学号
+		getchar();
+		printf("请输入第%d位同学学号：", i + 1);
 		scanf("%s", num);
-		printf("请输入第%d名同学姓名\n", i + 1);
-		char name[9];	  //姓名
+		int a = strlen(num), x = 0;
+		for (j = 0; j < 8; j++)
+			if (num[j] > '9' || num[j] < '0')
+			{
+				x++;
+				j = 8;
+			}
+		while (a != 8 && x != 0)
+		{
+			a = strlen(num);
+			x = 0;
+			for (j = 0; j < 8; j++)
+				if (num[j] > '9' || num[j] < '0')
+				{
+					x++;
+					j = 8;
+				}
+				printf("学号只能输入0~9的8位数字\n");
+			printf("请重新输入!!!\n");
+			scanf("%s", num);
+			getchar();
+		}
+		//getchar();
+		printf("请输入第%d位同学姓名：", i + 1);
 		scanf("%s", name);
-		printf("请输入第%d名同学院系\n", i + 1);
-		char college[21]; //院系
-		scanf("%s", &college);
-		printf("请输入第%d名同学班级\n", i + 1);
-		char class1[9];   //班级
+		//getchar();
+		printf("请输入第%d位同学班级：", i + 1);
 		scanf("%s", class1);
-		printf("请输入第%d名同学出生年月日(yy mm dd)\n", i + 1);
-		int year, month, day;
-		scanf("%d %d %d", &year, &month, &day);
-		printf("请输入第%d名同学部门\n", i + 1);
-		char department[7];
-		scanf("%s", department);
-		printf("\n");
+		a = strlen(class1);
+		while (a != 4)
+		{
+			printf("班级输入错误，请输入正确的班级:");
+			scanf("%s", class1);
+			a = strlen(class1);
+		}
+		//getchar();
+		printf("请输入第%d位同学语文成绩：", i + 1);
+		scanf("%d", &yw);
+		while (yw > 100 || yw < 0)
+		{
+			printf("成绩输入错误，请重新输入:\n");
+			scanf("%d", &yw);
+		}
+		printf("请输入第%d位同学数学成绩：", i + 1);
+		scanf("%d", &sx);
+		while (sx > 100 || sx < 0)
+		{
+			printf("成绩输入错误，请重新输入:\n");
+			scanf("%d", &sx);
+		}
+		printf("请输入第%d位同学英语成绩：", i + 1);
+		scanf("%d", &yy);
+		while (yy > 100 || yy < 0)
+		{
+			printf("成绩输入错误，请重新输入:\n");
+			scanf("%d", &yy);
+		}
+		p = (struct student *)malloc(sizeof(struct student));
 		strcpy(p->num, num);
 		strcpy(p->name, name);
-		strcpy(p->college, college);
 		strcpy(p->class1, class1);
-		p->day.year = year;
-		p->day.month = month;
-		p->day.day = day;
-		strcpy(p->department, department);
+		p->yw = yw;
+		p->sx = sx;
+		p->yy = yy;
 		p->next = NULL;
-		if (head_s == NULL)
-			head_s = p;
+		if (head == NULL)
+			head = p;
 		else
 			q->next = p;
 		q = p;
 	}
-	return head_s;
-	
+	return head;
 }
 
-STA *find_s(STA *head_s, char num[]) //部员-查找
+void save_1(struct student *head)
 {
-	setbuf(stdin, NULL);
-	STA *p;
-	p = head_s;
-	int k = 0;
-	while (p)
+	struct student *stu, *p;
+	FILE *fp;
+	printf("请输入文件路径及文件名：");
+	fp = fopen("d:/1.txt", "wt+");
+	/*
+	if (fp == NULL)
 	{
-		if (!strcmp(p->num, num))
+	printf("对不起，文件打开错误，请重新输入文件位置\n");
+	Sleep(2000);
+	save_1(head);
+	}
+	stu = head->next;
+	*/
+	stu = p = head;
+	while (stu)
+	{
+		p = stu->next;
+		if (!p)
 		{
-			k++;
+			fprintf(fp, "%s\t%s\t%s\t%d\t%d\t%d", stu->num, stu->name, stu->class1, stu->yw, stu->sx, stu->yy);
 			break;
 		}
-		p = p->next;
+		fprintf(fp, "%s\t%s\t%s\t%d\t%d\t%d\n", stu->num, stu->name, stu->class1, stu->yw, stu->sx, stu->yy);
+		stu = stu->next;
 	}
-	if (k)
-		return p;
-	else
-		return NULL;
+	/*
+	for (stu = head->next; stu != NULL; stu = stu->next)
+	fprintf(fp, "%s\t%s\t%s\t%d\t%d\t%d\n", stu->num, stu->name, stu->class1, stu->yw, stu->sx, stu->yy);
+	*/
+	printf("文件写入成功,请按任意键\n");
+	getchar();
+	fclose(fp);
 }
 
-STA *insert_s(STA *head_s) //部员-头插法
+struct student *inf_1()
 {
-	STA *p, *q;
-	q = head_s;
-	p = (STA *)malloc(sizeof(STA));
-	printf("请输入学号\n");
-	char num[9]; //学号
+	struct student *head, *r, *stu;
+	head = (struct student *)malloc(sizeof(struct student));
+	FILE *fp;
+	printf("***********文件读入*************\n");
+	fp = fopen("d:/1.txt", "rt");
+	/*
+	head = (struct student *)malloc(sizeof(struct student));
+	head->next = NULL;
+	*/
+	r = head;
+	while (!feof(fp))
+	{
+		stu = (struct student *)malloc(sizeof(struct student));
+		fscanf(fp, "%s %s %s %d %d %d", stu->num, stu->name, stu->class1, &stu->yw, &stu->sx, &stu->yy);
+		r->next = stu;
+		r = stu;
+	}
+	r->next = NULL;
+	fclose(fp);
+	printf("文件读取成功！！\n");
+	printf("正在跳转，请稍后……\n");
+	Sleep(1000);
+	system("cls");
+	head = head->next;
+	return head;
+}
+
+void output()
+{
+	struct student *p, *head, *stu;
+	head = inf_1();
+	printf("学号\t姓名\t班级\t语文\t数学\t英语\n");
+	p = stu = head;
+	while (p)
+	{
+		/*stu = p->next;
+		if(!stu)
+		break;*/
+		printf("%s\t%s\t%s\t%d\t%d\t%d\n", p->num, p->name, p->class1, p->yw, p->sx, p->yy);
+		p = p->next;
+	}
+	getchar();
+}
+
+void insert(struct student *head)
+{
+	struct student *p, *q, *find1;
+	char num[9];	 //学号
+	char name[9];	 //姓名
+	char class1[5];  //班级
+	int yw;			 //语文成绩
+	int sx;			 //数学成绩
+	int yy;			 //英语成绩
+	printf("请输入同学学号：");
 	scanf("%s", num);
-	printf("请输入姓名\n");
-	char name[9]; //姓名
+	int a = strlen(num), x = 0, j;
+	for (j = 0; j < 8; j++)
+		if (num[j] > '9' || num[j] < '0')
+		{
+			x++;
+			j = 8;
+		}
+	while (a != 8 && x != 0)
+	{
+		a = strlen(num);
+		x = 0;
+		for (j = 0; j < 8; j++)
+			if (num[j] > '9' || num[j] < '0')
+			{
+				x++;
+				j = 8;
+			}
+		printf("学号只能输入0~9的8位数字\n");
+		printf("请重新输入!!!\n");
+		scanf("%s", num);
+		getchar();
+	}
+	find1 = find(head, num);
+	while (find1 != NULL)
+	{
+		printf("此账号已存在，请重新输入!!!\n");
+		scanf("%s", num);
+		for (j = 0; j < 8; j++)
+			if (num[j] > '9' || num[j] < '0')
+			{
+				x++;
+				j = 8;
+			}
+		while (a != 8 && x != 0)
+		{
+			a = strlen(num);
+			x = 0;
+			for (j = 0; j < 8; j++)
+				if (num[j] > '9' || num[j] < '0')
+				{
+					x++;
+					j = 8;
+				}
+			printf("学号只能输入0~9的8位数字\n");
+			printf("请重新输入!!!\n");
+			scanf("%s", num);
+		}
+		find1 = find(head, num);
+	}
+	printf("请输入同学姓名：");
 	scanf("%s", name);
-	printf("请输入院系\n");
-	char college[21]; //院系
-	scanf("%s", &college);
-	printf("请输入班级\n");
-	char class1[9]; //班级
+	printf("请输入同学班级：");
 	scanf("%s", class1);
-	printf("请输入出生年月日(yy mm dd)\n");
-	int year, month, day;
-	scanf("%d %d %d", &year, &month, &day);
-	printf("请输入部门\n");
-	char department[7];
-	scanf("%s", department);
+	a = strlen(class1);
+	while (a != 4)
+	{
+		printf("班级输入错误，请输入正确的班级:");
+		scanf("%s", class1);
+		a = strlen(class1);
+	}
+	printf("请输入同学语文成绩：");
+	scanf("%d", &yw);
+	while (yw > 100 || yw < 0)
+	{
+		printf("成绩输入错误，请重新输入:\n");
+		scanf("%d", &yw);
+	}
+	printf("请输入同学数学成绩：");
+	scanf("%d", &sx);
+	while (sx > 100 || sx < 0)
+	{
+		printf("成绩输入错误，请重新输入:\n");
+		scanf("%d", &sx);
+	}
+	printf("请输入同学英语成绩：");
+	scanf("%d", &yy);
+	while (yy > 100 || yy < 0)
+	{
+		printf("成绩输入错误，请重新输入:\n");
+		scanf("%d", &yy);
+	}
+	p = (struct student *)malloc(sizeof(struct student));
+	q = (struct student *)malloc(sizeof(struct student));
+	q = head->next;
 	strcpy(p->num, num);
 	strcpy(p->name, name);
-	strcpy(p->college, college);
 	strcpy(p->class1, class1);
-	p->day.year = year;
-	p->day.month = month;
-	p->day.day = day;
-	strcpy(p->department, department);
-	head_s = p;
+	p->yw = yw;
+	p->sx = sx;
+	p->yy = yy;
+	head->next = p;
 	p->next = q;
-	return head_s;
-	STA *m;
-	printf("学号\t姓名\t院系\t班级\t出生日期\t部门\n");
-	m = head_s;
-	while (m)
-	{
-		printf("%s\t%s\t%s\t%s\t%d-%d-%d\t%s\n", m->num, m->name, m->college, m->class1, m->day.year, m->day.month, m->day.day, m->department);
-		m = m->next;
-	}
-	getchar();
 }
 
-void delete_s(STA *head_s, STA_a *head_s_a, char num[]) //部员-删除
+struct student *find(struct student *head, char num[9])
 {
-	STA *p, *q;
-	p = q = head_s;
-	if (!strcmp(head_s->num, num))
-	{
-		p = head_s;
-		q = head_s->next;
-		head_s = q;
-	}
-	else
-	{
-		while (p->next)
+	struct student *p, *q;
+	q = (struct student *)malloc(sizeof(struct student));
+	int i = 0;
+	for (p = head; p != NULL; p = p->next)
+		if (!strcmp(num, p->num))
 		{
-			if (!strcmp(p->num, num))
-			{
-				break;
-			}
-			q = p;
-			p = p->next;
+			i = 1;
+			break;
 		}
-		q->next = p->next;
-	}
-	free(p);
-	deleter_s_a(head_s_a, num);
-	save_s(head_s);
-}
-
-void change_s(STA *head_s, char num[]) //部员-修改
-{
-	setbuf(stdin, NULL);
-	STA *p;
-	p = find_s(head_s, num);
-	if (p == NULL)
+	/*
+	while (p&&strcmp(num, p->num))
+	p = p->next;
+	if (!strcmp(num, p->num))
+	i++;
+	*/
+	if (i == 0)
 	{
-		printf("查无此人!!!\n");
+		printf("查询不到结果，请重新输入:");
+		char num_1[9];
 		getchar();
+		scanf("%s", num_1);
+		find(head, num_1);
 	}
-	else
+	return p;
+}
+
+void change_1(struct student *head, char num[9])
+{
+	struct student *p, *find1;
+	p = (struct student *)malloc(sizeof(struct student));
+	p = find(head, num);
+	char a;
+	printf("┌───────────────────────┐\n");
+	printf("├        1.学号         ┤\n");
+	printf("├        2.姓名         ┤\n");
+	printf("├        3.班级         ┤\n");
+	printf("├        4.语文成绩     ┤\n");
+	printf("├        5.数学成绩     ┤\n");
+	printf("├        6.英语成绩     ┤\n");
+	printf("└───────────────────────┘\n");
+	printf("请输入需要修改的内容:");
+	scanf("%c", &a);
+	while (a > '6' || a < '1')
 	{
+		printf("请输入正确的序号(1~6)!!!\n");
+		printf("请重新输入\n");
+		scanf("%c", &a);
+	}
+	if (a == '1')
+	{
+		char num[9];
+		printf("请输入同学学号：");
+		scanf("%s", num);
+		int x = strlen(num);
+
+		while (x != 8)
 		{
-			printf("成员信息为");
-			printf("%s\t%s\t%s\t%s\t%d-%d-%d\t%s\n", p->num, p->name, p->college, p->class1, p->day.year, p->day.month, p->day.day, p->department);
+			printf("学号输入错误，请输入8位学号:");
+			scanf("%s", num);
+			x = strlen(num);
 		}
-		printf("请输入姓名\n");
-		char name[9]; //姓名
-		scanf("%s", name);
-		printf("请输入院系\n");
-		char college[21]; //院系
-		scanf("%s", &college);
-		printf("请输入班级\n");
-		char class1[9]; //班级
-		scanf("%s", class1);
-		printf("请输入出生年月日(yy mm dd)\n");
-		int year, month, day;
-		scanf("%d %d %d", &year, &month, &day);
-		printf("请输入部门\n");
-		char department[7];
-		scanf("%s", department);
-		printf("\n");
+		find1 = find(head, num);
+		while (find1 != NULL)
+		{
+			printf("此账号已存在，请重新输入!!!\n");
+			scanf("%s", num);
+			while (a != 8)
+			{
+				printf("账号格式错误，请重新输入:");
+				scanf("%s", num);
+				a = strlen(num);
+			}
+			find1 = find(head, num);
+		}
 		strcpy(p->num, num);
+	}
+	if (a == '2')
+	{
+		char name[9];  //姓名
+		printf("请输入同学姓名：");
+		scanf("%s", name);
 		strcpy(p->name, name);
-		strcpy(p->college, college);
+	}
+	if (a == '3')
+	{
+		char class1[5];//班级
+		printf("请输入同学班级：");
+		scanf("%s", class1);
+		int x = strlen(class1);
+		while (x != 8)
+		{
+			printf("学号输入错误，请输入8位学号:");
+			scanf("%s", class1);
+			x = strlen(class1);
+		}
 		strcpy(p->class1, class1);
-		p->day.year = year;
-		p->day.month = month;
-		p->day.day = day;
-		strcpy(p->department, department);
-		printf("修改成功！！！");
-		Sleep(500);
+	}
+	if (a == '4')
+	{
+		int yw;        //语文成绩
+		printf("请输入同学语文成绩：");
+		scanf("%d", &yw);
+		while (yw > 100 || yw < 0)
+		{
+			printf("成绩输入错误，请重新输入:\n");
+			scanf("%d", &yw);
+		}
+		p->yw = yw;
+	}
+	if (a == '5')
+	{
+		int sx;        //数学成绩
+		printf("请输入同学数学成绩：");
+		scanf("%d", &sx);
+		while (sx > 100 || sx < 0)
+		{
+			printf("成绩输入错误，请重新输入:\n");
+			scanf("%d", &sx);
+		}
+		p->sx = sx;
+	}
+	if (a == '6')
+	{
+		int yy;        //英语成绩
+		printf("请输入同学英语成绩：");
+		scanf("%d", &yy);
+		while (yy > 100 || yy < 0)
+		{
+			printf("成绩输入错误，请重新输入:\n");
+			scanf("%d", &yy);
+		}
+		p->yy = yy;
 	}
 }
 
-void output_s(STA *head_s) //部员-输出
+void delete_1(struct student *head, char num[9])
 {
-	STA *p;
-	printf("学号\t姓名\t院系\t班级\t出生日期\t部门\n");
-	p = head_s;
-	while (p)
+	struct student *p, *q;
+	p = (struct student *)malloc(sizeof(struct student));
+	q = head;
+	p = find(head, num);
+	while (strcmp(q->next->num, num))
 	{
-		printf("%s\t%s\t%s\t%s\t%d-%d-%d\t%s\n", p->num, p->name, p->college, p->class1, p->day.year, p->day.month, p->day.day, p->department);
-		p = p->next;
+		q = q->next;
 	}
+	q->next = p->next;
+	free(p);
+}
+
+void change_2(struct student *head)
+{
+
+}
+
+void ywsort(struct student *head)
+{
+	struct student *cur = NULL;
+	struct student *teil = NULL;
+	cur = head;
+	while (cur != teil)
+	{
+		while (cur->next != teil)
+		{
+			if (cur->yw < cur->next->yw)
+			{
+				//交换学号
+				char temp_1[9];
+				strcpy(temp_1, cur->num);
+				strcpy(cur->num, cur->next->num);
+				strcpy(cur->next->num, temp_1);
+				//交换姓名
+				char temp_2[9];
+				strcpy(temp_2, cur->name);
+				strcpy(cur->name, cur->next->name);
+				strcpy(cur->next->name, temp_2);
+				//交换班级
+				char temp_3[5];
+				strcpy(temp_3, cur->class1);
+				strcpy(cur->class1, cur->next->class1);
+				strcpy(cur->next->class1, temp_3);
+				//交换语文成绩
+				int temp_4 = cur->yw;
+				cur->yw = cur->next->yw;
+				cur->next->yw = temp_4;
+				//交换数学成绩
+				int temp_5 = cur->sx;
+				cur->sx = cur->next->sx;
+				cur->next->sx = temp_5;
+				//交换英语成绩
+				int temp_6 = cur->yy;
+				cur->yy = cur->next->yy;
+				cur->next->yy = temp_6;
+			}
+			cur = cur->next;
+		}
+		teil = cur;
+		cur = head;
+	}
+	printf("学号\t姓名\t班级\t语文\t数学\t英语\n");
+	for (cur = head; cur; cur = cur->next)
+		printf("%s\t%s\t%s\t%d\t%d\t%d\n", cur->num, cur->name, cur->class1, cur->yw, cur->sx, cur->yy);
+	getchar();
 	getchar();
 }
 
-void login_s(STA_a *head_s_a, char USR[]) //部员-登录界面
+void sxsort(struct student *head)
 {
-	setbuf(stdin, NULL);
-	char PW[20];
-	STA_a *p;
-	p = find_s_a(head_s_a, USR);
-	if (p == NULL)
+	struct student *cur = NULL;
+	struct student *teil = NULL;
+	cur = head;
+	while (cur != teil)
 	{
-		printf("没有找到此账号\n返回上一步\n");
-		Sleep(1000);
-	}
-	else
-	{
-		printf("请输入密码\n");
-		scanf("%s", PW);
-		int count = 0;
-		count++;
-		while (strcmp(PW, p->PW))
+		while (cur->next != teil)
 		{
-			printf("密码输入错误，还有%d次机会，请重新输入\n", 3 - count);
-			scanf("%s", PW);
-			count++;
-			getchar();
-			if (3 - count == 0)
+			if (cur->sx < cur->next->sx)
 			{
-				printf("密码输入错误超过三次，正在退出系统!!!\n");
-				Sleep(1000);
+				//交换学号
+				char temp_1[9];
+				strcpy(temp_1, cur->num);
+				strcpy(cur->num, cur->next->num);
+				strcpy(cur->next->num, temp_1);
+				//交换姓名
+				char temp_2[9];
+				strcpy(temp_2, cur->name);
+				strcpy(cur->name, cur->next->name);
+				strcpy(cur->next->name, temp_2);
+				//交换班级
+				char temp_3[5];
+				strcpy(temp_3, cur->class1);
+				strcpy(cur->class1, cur->next->class1);
+				strcpy(cur->next->class1, temp_3);
+				//交换语文成绩
+				int temp_4 = cur->yw;
+				cur->yw = cur->next->yw;
+				cur->next->yw = temp_4;
+				//交换数学成绩
+				int temp_5 = cur->sx;
+				cur->sx = cur->next->sx;
+				cur->next->sx = temp_5;
+				//交换英语成绩
+				int temp_6 = cur->yy;
+				cur->yy = cur->next->yy;
+				cur->next->yy = temp_6;
+			}
+			cur = cur->next;
+		}
+		teil = cur;
+		cur = head;
+	}
+	printf("学号\t姓名\t班级\t语文\t数学\t英语\n");
+	for (cur = head; cur; cur = cur->next)
+		printf("%s\t%s\t%s\t%d\t%d\t%d\n", cur->num, cur->name, cur->class1, cur->yw, cur->sx, cur->yy);
+	getchar();
+	getchar();
+}
+
+void yysort(struct student *head)
+{
+	struct student *cur = NULL;
+	struct student *teil = NULL;
+	cur = head;
+	while (cur != teil)
+	{
+		while (cur->next != teil)
+		{
+			if (cur->yy < cur->next->yy)
+			{
+				//交换学号
+				char temp_1[9];
+				strcpy(temp_1, cur->num);
+				strcpy(cur->num, cur->next->num);
+				strcpy(cur->next->num, temp_1);
+				//交换姓名
+				char temp_2[9];
+				strcpy(temp_2, cur->name);
+				strcpy(cur->name, cur->next->name);
+				strcpy(cur->next->name, temp_2);
+				//交换班级
+				char temp_3[5];
+				strcpy(temp_3, cur->class1);
+				strcpy(cur->class1, cur->next->class1);
+				strcpy(cur->next->class1, temp_3);
+				//交换语文成绩
+				int temp_4 = cur->yw;
+				cur->yw = cur->next->yw;
+				cur->next->yw = temp_4;
+				//交换数学成绩
+				int temp_5 = cur->sx;
+				cur->sx = cur->next->sx;
+				cur->next->sx = temp_5;
+				//交换英语成绩
+				int temp_6 = cur->yy;
+				cur->yy = cur->next->yy;
+				cur->next->yy = temp_6;
+			}
+			cur = cur->next;
+		}
+		teil = cur;
+		cur = head;
+	}
+	printf("学号\t姓名\t班级\t语文\t数学\t英语\n");
+	for (cur = head; cur; cur = cur->next)
+		printf("%s\t%s\t%s\t%d\t%d\t%d\n", cur->num, cur->name, cur->class1, cur->yw, cur->sx, cur->yy);
+	getchar();
+	getchar();
+}
+
+void numsort(struct student *head)
+{
+	struct student *cur = NULL;
+	struct student *teil = NULL;
+	cur = head;
+	while (cur != teil)
+	{
+		while (cur->next != teil)
+		{
+			if (strcmp(cur->num, cur->next->num)<0)
+			{
+				//交换学号
+				char temp_1[9];
+				strcpy(temp_1, cur->num);
+				strcpy(cur->num, cur->next->num);
+				strcpy(cur->next->num, temp_1);
+				//交换姓名
+				char temp_2[9];
+				strcpy(temp_2, cur->name);
+				strcpy(cur->name, cur->next->name);
+				strcpy(cur->next->name, temp_2);
+				//交换班级
+				char temp_3[5];
+				strcpy(temp_3, cur->class1);
+				strcpy(cur->class1, cur->next->class1);
+				strcpy(cur->next->class1, temp_3);
+				//交换语文成绩
+				int temp_4 = cur->yw;
+				cur->yw = cur->next->yw;
+				cur->next->yw = temp_4;
+				//交换数学成绩
+				int temp_5 = cur->sx;
+				cur->sx = cur->next->sx;
+				cur->next->sx = temp_5;
+				//交换英语成绩
+				int temp_6 = cur->yy;
+				cur->yy = cur->next->yy;
+				cur->next->yy = temp_6;
+			}
+			cur = cur->next;
+		}
+		teil = cur;
+		cur = head;
+	}
+	printf("学号\t姓名\t班级\t语文\t数学\t英语\n");
+	for (cur = head; cur; cur = cur->next)
+		printf("%s\t%s\t%s\t%d\t%d\t%d\n", cur->num, cur->name, cur->class1, cur->yw, cur->sx, cur->yy);
+	getchar();
+	getchar();
+}
+
+void sort_1(struct student *head, struct login_a *head_a, struct login_t *head_t, char username[20])
+{
+	while (1)
+	{
+		system("cls");
+		char a;
+		printf("********************\n");
+		printf("        1.根据语文成绩排序\n");
+		printf("        2.根据数学成绩排序\n");
+		printf("        3.根据英语成绩排序\n");
+		printf("        4.根据学号排序\n");
+		printf("        0.返回上一级\n");
+		printf("********************\n");
+		printf("请输入您的信息:");
+		scanf("%c", &a);
+		while (a > '4' || a < '0')
+		{
+			printf("请输入正确的序号(0~4)!!!\n");
+			printf("请重新输入\n");
+			scanf("%c", &a);
+		}
+		switch (a)
+		{
+		case '1':
+			ywsort(head);
+			break;
+		case '2':
+			sxsort(head);
+			break;
+		case '3':
+			yysort(head);
+			break;
+		case '4':
+			numsort(head);
+			break;
+		case '0':
+		{
+			printf("返回中请稍后···\n");
+			if (count_x == 1)
+				administrator(head, head_a, username);
+			else if (count_x == 2)
+				teacher(head, head_t, username);
+			else if (count_x == 3)
+				student_1(head);
+			exit(0);
+		}
+		break;
+		}
+	}
+}
+
+void chaxun(struct student *head, char num[9])
+{
+	struct student *p;
+	p = find(head, num);
+	printf("学号\t姓名\t班级\t语文\t数学\t英语\n");
+	printf("%s\t%s\t%s\t%d\t%d\t%d\n", p->num, p->name, p->class1, p->yw, p->sx, p->yy);
+	getchar();
+}
+
+void menu(struct student *head)//主菜单
+{
+	char a;
+	printf("********************\n");
+	printf("        1.管理员\n");
+	printf("        2.老师\n");
+	printf("        3.学生\n");
+	printf("        0.退出系统\n");
+	printf("********************\n");
+	printf("请输入您的信息:");
+	scanf("%c", &a);
+	while (a > '3' || a < '0')
+	{
+		printf("请输入正确的序号(0~3)!!!\n");
+		printf("请重新输入\n");
+		scanf("%c", &a);
+	}
+	if (a == '1')
+	{
+		system("cls");
+		struct login_a *head_a;
+		head_a = inf_l_a();
+		printf("请输入账号:\n");
+		char username[20];
+		scanf("%s", username);
+		strcpy(username, login_l_a(head_a, username));
+		administrator(head, head_a, username);
+		system("cls");
+	}
+	if (a == '2')
+	{
+		system("cls");
+		printf("请输入账号:\n");
+		struct login_t *head_t;
+		head_t = inf_l_t();
+		char username[20];
+		scanf("%s", username);
+		strcpy(username, login_l_t(head_t, username));
+		teacher(head, head_t, username);
+		system("cls");
+	}
+	if (a == '3')
+	{
+		student_1(head);
+		system("cls");
+	}
+	if (a == '0')
+	{
+		printf("退出中请稍后···\n");
+		exit(0);
+	}
+}
+
+char *login_l_a(struct login_a *head_a, char username[20])
+{
+	struct login_a *p;
+	p = find_l(head_a, username);
+	while (!p)
+	{
+		printf("输入信息错误，请重新输入账号:\n");
+		scanf("%s", username);
+		p = find_l(head_a, username);
+	}
+	printf("请输入密码:\n");
+	char password[20];
+	scanf("%s", password);
+	int i = 0;
+	while (strcmp(p->password, password))
+	{
+		if (i == 2)
+		{
+			printf("密码3次错误输入，程序退出!!!\n");
+			Sleep(1000);
+			exit(0);
+		}
+		printf("密码输入错误，你还有%d次机会，请重新输入\n", 2 - i);
+		scanf("%s", password);
+		i++;
+	}
+	return username;
+}
+
+char *login_l_t(struct login_t *head_t, char username[20])
+{
+	struct login_t *p;
+	p = find_2(head_t, username);
+	while (!p)
+	{
+		printf("输入信息错误，请重新输入账号:\n");
+		scanf("%s", username);
+		p = find_2(head_t, username);
+	}
+	printf("请输入密码:\n");
+	char password[20];
+	scanf("%s", password);
+	int i = 0;
+	while (strcmp(p->password, password))
+	{
+		if (i == 2)
+		{
+			printf("密码3次错误输入，程序退出!!!\n");
+			Sleep(1000);
+			exit(0);
+		}
+		printf("密码输入错误，你还有%d次机会，请重新输入\n", 2 - i);
+		scanf("%s", password);
+		i++;
+	}
+	return username;
+}
+
+void logininf(struct student *head, struct login_a *head_a, char username[20])
+{
+	getchar();
+	while (1)
+	{
+		system("cls");
+		char a;
+		struct login_t *head_t;
+		head_t = inf_l_t();
+		printf("1.添加老师账号    2.修改老师密码\n");
+		printf("3.添加管理员账号  4.修改自己密码\n");
+		printf("5.删除老师账号    6.删除此账号\n");
+		printf("0.返回上一级\n");
+		printf("请输入您所需要的功能:");
+		scanf("%c", &a);
+		while (a > '6' || a < '0')
+		{
+			printf("请输入正确的序号(0~6)!!!\n");
+			printf("请重新输入\n");
+			scanf("%c", &a);
+		}
+		switch (a)
+		{
+		case '1':
+			insert_l_t(head_t);
+			save_3(head_t);
+			break;
+		case '2':
+			system("cls");
+			printf("请输入账户名\n");
+			char username_1[20];
+			scanf("%s", username_1);
+			change_l_t(head_t, username_1);
+			save_3(head_t);
+			break;
+		case '3':
+			system("cls");
+			insert_l_a(head_a);
+			save_2(head_a);
+			break;
+		case '4':
+			system("cls");
+			printf("账号%s\n", username);
+			change_l_a(head_a, username);
+			save_2(head_a);
+			break;
+		case '5':
+			printf("请输入需要删除的账号:\n");
+			char username_2[20];
+			scanf("%s", username_2);
+			delete_2(head_t, username_2);
+			break;
+		case '6':
+		{
+			getchar();
+			printf("此账号为%s\n", username);
+			printf("确认删除？(y/n)");
+			char chance_1;
+			scanf("%c", &chance_1);
+			while (chance_1 != 'y' && chance_1 != 'n')
+			{
+				printf("输入错误，请输入y/n\n");
+				scanf("%c", &chance_1);
+			}
+			if (chance_1 == 'y')
+			{
+				delete_1(head_a, username);
+				save_2(head_a);
+				printf("账号删除成功,退出程序!!!\n");
 				exit(0);
 			}
-		}
-	}
-}
-
-void save_s(STA *head_s) //部员-文件保存
-{
-	STA *p = head_s, *sta = head_s;
-	FILE *fp;
-	fp = fopen("d:/staff.txt", "wt+");
-	if (fp == NULL)
-	{
-		printf("d:/staff.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	while (sta)
-	{
-		p = sta->next;
-		if (!p)
-		{
-			fprintf(fp, "%s\t%s\t%s\t%s\t%d-%d-%d\t%s", sta->num, sta->name, sta->college, \
-				sta->class1, sta->day.year, sta->day.month, sta->day.day, sta->department);
-			break;
-		}
-		fprintf(fp, "%s\t%s\t%s\t%s\t%d-%d-%d\t%s\n", sta->num, sta->name, sta->college, sta->class1, sta->day.year, sta->day.month, sta->day.day, sta->department);
-		sta = sta->next;
-	}
-	fclose(fp);
-}
-
-STA *inf_s()  //部员-文件读取
-{
-	STA *head_s, *p, *q;
-	head_s = q = (STA *)malloc(sizeof(STA));
-	head_s == NULL;
-	FILE *fp;
-	fp = fopen("d:/staff.txt", "rt+");
-	if (fp == NULL)
-	{
-		printf("d:/staff.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	while (!feof(fp))
-	{
-		p = (STA *)malloc(sizeof(STA));
-		fscanf(fp, "%s %s %s %s %d-%d-%d %s", p->num, p->name, p->college, \
-			p->class1, &p->day.year, &p->day.month, &p->day.day, p->department);
-		p->next = NULL;
-		if (head_s == NULL)
-			head_s = p;
-		else
-			q->next = p;
-		q = p;
-	}
-	fclose(fp);
-	return head_s->next;
-}
-
-/*
-* 部员信息的创建之后必须跟着部员账户的创建
-*/
-STA_a *create_s_a(STA_a *head_s_a, STA *head_s) //部员账户-创建
-{
-	setbuf(stdin, NULL);
-	STA_a *p, *q;
-	q = (STA_a *)malloc(sizeof(STA_a));
-	head_s_a = NULL;
-	STA *p1 = head_s;
-	while (p1)
-	{
-		p = (STA_a *)malloc(sizeof(STA));
-		strcpy(p->USR, p1->num);
-		printf("请输入%s的密码\n", p->USR);
-		char PW[20];
-		scanf("%s", PW);
-		strcpy(p->PW, PW);
-		p->next = NULL;
-		if (head_s_a == NULL)
-			head_s_a = p;
-		else
-			q->next = p;
-		q = p;
-		p1 = p1->next;
-	}
-	return head_s_a;
-}
-
-STA_a *find_s_a(STA_a *head_s_a, char num[]) //部员账户-查找
-{
-	setbuf(stdin, NULL);
-	STA_a *p;
-	p = head_s_a;
-	int k = 0;
-	while (p->next)
-	{
-		if (!strcmp(p->USR, num))
-		{
-			k++;
-			break;
-		}
-		p = p->next;
-	}
-	if (k)
-		return p;
-	else
-		return NULL;
-}
-
-void deleter_s_a(STA_a *head_s_a, char num[]) //部员账户-删除
-{
-	STA_a *p, *q;
-	p = q = head_s_a;
-	if (!strcmp(p->USR, num))
-	{
-		p = head_s_a;
-		q = head_s_a->next;
-		head_s_a = q;
-	}
-	else
-	{
-		while (p->next)
-		{
-			if (!strcmp(p->USR, num))
+			else if (chance_1 == 'n')
 			{
-				break;
+				printf("取消删除，正在返回\n");
+				Sleep(1000);
+				logininf(head, head_a, username);
 			}
-			q = p;
-			p = p->next;
 		}
-		q->next = p->next;
+			break;
+		case '0':
+			system("cls");
+			printf("正在返回上一级，请稍等……\n");
+			Sleep(1000);
+			administrator(head, head_a, username);
+			break;
+		}
 	}
-	free(p);
-	save_s_a(head_s_a);
 }
 
-void change_s_a(STA_a *head_s_a,char num[]) //部员账户-修改
+void administrator(struct student *head, struct login_a *head_a, char username[20])//管理员选单
 {
-	setbuf(stdin, NULL);
-	STA_a *p = find_s_a(head_s_a, num);
-	char PW[20];
-	printf("请输入密码");
-	scanf("%s", PW);
-	strcpy(p->PW, PW);
-	save_s_a(head_s_a);
-}
-
-void save_s_a(STA_a *head_s_a) //部员账户-文件保存
-{
-	STA_a *p = head_s_a, *sta = head_s_a;
-	FILE *fp;
-	fp = fopen("d:/staff_a.txt", "wt+");
-	if (fp == NULL)
+	char a;
+	while (1)
 	{
-		printf("d:/staff_atxt文件打开失败，请按回车退出系统！！");
 		getchar();
-		exit(0);
+		system("cls");
+		printf("********************\n");
+		printf("\t1.新建学生信息	2.修改学生信息    3.删除学生信息\n");
+		printf("\t4.添加学生信息	5.学生信息排序    6.查询学生信息\n");
+		printf("\t7.打印学生信息	8.保存到文件      9.登陆信息管理\n");
+		printf("\t0.退出系统\n");
+		printf("********************\n");
+		printf("请输入您需要的功能:");
+		scanf("%c", &a);
+		while (a > '9' || a < '0')
+			// while (strcmp(a,"15") > 0 || strcmp(a,"0")<0)
+		{
+			printf("请输入正确的序号(0~15)!!!\n");
+			printf("请重新输入\n");
+			scanf("%c", &a);
+		}
+		switch (a)
+		{
+		case '1':
+		{
+			system("cls");
+			head = create();
+		}
+		break;
+		case '2':
+		{
+			getchar();
+			system("cls");
+			printf("请输入需要修改的学生的学号:\n");
+			char num[9];
+			scanf("%s", num);
+			int x = strlen(num);
+			while (x != 8)
+			{
+				printf("学号输入错误，请输入8位学号:");
+				scanf("%s", num);
+				x = strlen(num);
+			}
+			change_1(head, num);
+		}
+		break;
+		case '3':
+		{
+			getchar();
+			system("cls");
+			char num[9];
+			printf("请输入学生学号:\n");
+			scanf("%s", num);
+			int x = strlen(num);
+			while (x != 8)
+			{
+				printf("学号输入错误，请输入8位学号:");
+				scanf("%s", num);
+				x = strlen(num);
+			}
+			delete_1(head, num);
+		}
+		break;
+		case '4':
+		{
+			system("cls");
+			insert(head);
+		}
+		break;
+		case '5':
+		{
+			count_x = 1;
+			system("cls");
+			struct login_t *head_t;
+			head_t = (struct login_t *)malloc(sizeof(struct login_t));
+			sort_1(head, head_a, head_t, username);
+		}
+		break;
+		case '6':
+		{
+			system("cls");
+			char num[9];
+			printf("请输入学生学号:");
+			scanf("%s", num);
+			getchar();
+			int x = strlen(num);
+			while (x != 8)
+			{
+				printf("学号输入错误，请输入8位学号:");
+				scanf("%s", num);
+				x = strlen(num);
+			}
+			chaxun(head, num);
+		}
+		break;
+		case '7':
+		{
+			system("cls");
+			output();
+		}
+		break;
+		case '8':
+			save_1(head);
+			break;
+		case '9':
+		{
+			logininf(head, head_a, username);
+		}
+		break;
+		case '0':
+		{
+			printf("退出中请稍后···\n");
+			Sleep(1000);
+			exit(0);
+		}
+		break;
+		}
 	}
-	while (sta)
+}
+
+void teacher(struct student *head, struct login_t *head_t, char username[20])//老师选单
+{
+	char a;
+	while (1)
 	{
-		p = sta->next;
+		system("cls");
+		printf("********************\n");
+		printf("1.添加学生信息    2.修改学生信息    3.删除本班学生信息\n");
+		printf("4.学生信息排序    5.修改密码\n");
+		printf("0.退出系统\n");
+		printf("********************\n");
+		printf("请输入您需要的功能:");
+		scanf("%c", &a);
+		while (a > '5' || a < '0')
+		{
+			printf("请输入正确的序号(0~5)!!!\n");
+			printf("请重新输入\n");
+			scanf("%c", &a);
+		}
+		switch (a)
+		{
+		case '1':
+		{
+			system("cls");
+			insert(head);
+		}
+		break;
+		case '2':
+		{
+			system("cls");
+			printf("请输入需要修改的学生的学号:\n");
+			char num[9];
+			scanf("%s", num);
+			int x = strlen(num);
+			while (x != 8)
+			{
+				printf("学号输入错误，请重新输入8位学号:");
+				scanf("%s", num);
+				x = strlen(num);
+			}
+			change_1(head, num);
+		}
+		break;
+		case '3':
+		{
+			system("cls");
+			char num[9];
+			scanf("%s", num);
+			int x = strlen(num);
+			while (x != 8)
+			{
+				printf("学号输入错误，请重新输入8位学号:");
+				scanf("%s", num);
+				x = strlen(num);
+			}
+			delete_1(head, num);
+		}
+		break;
+		case '4':
+		{
+			count_x = 2;
+			struct login_a *head_a;
+			head_a = (struct login_a *)malloc(sizeof(struct login_a));
+			system("cls");
+			sort_1(head, head_a, head_t, username);
+		}
+		break;
+		case '5':
+		{
+			system("cls");
+			change_l_t(head_t, username);
+			save_3(head_t);
+		}
+		break;
+		case '0':
+		{
+			system("cls");
+			printf("退出中请稍后···\n");
+			Sleep(1000);
+			exit(0);
+		}
+		break;
+		}
+	}
+}
+
+void student_1(struct student *head)//学生选单
+{
+	system("cls");
+	char a;
+	char num[9];
+	printf("请输入你的学号：");
+	scanf("%s", num);
+	int x = strlen(num);
+	while (x != 8)
+	{
+		printf("学号输入错误，请重新输入8位学号:");
+		scanf("%s", num);
+		x = strlen(num);
+	}
+	while (1)
+	{
+		printf("********************\n");
+		printf("\t1.查看自己信息\n");
+		printf("\t2.查看排名\n");
+		printf("\t0.退出\n");
+		printf("********************\n");
+		printf("请输入您需要的功能:");
+		scanf("%c", &a);
+		while (a > '2' || a < '0')
+		{
+			printf("请输入正确的序号(0~2)!!!\n");
+			printf("请重新输入\n");
+			scanf("%c", &a);
+		}
+		switch (a)
+		{
+		case '1':
+		{
+			system("cls");
+			chaxun(head, num);
+			getchar();
+		}
+		break;
+		case '2':
+		{
+			count_x = 3;
+			char username[20];
+			struct login_t *head_t;
+			struct login_a *head_a;
+			head_a = (struct login_a *)malloc(sizeof(struct login_a));
+			head_t = (struct login_t *)malloc(sizeof(struct login_t));
+			system("cls");
+			sort_1(head, head_a, head_t, username);
+			Sleep(1000);
+		}
+		break;
+		case '0':
+		{
+			system("cls");
+			printf("退出中请稍后···\n");
+			Sleep(1000);
+			exit(0);
+		}
+		break;
+		}
+	}
+}
+
+
+
+struct login_a *create_a()//创建管理员登陆链表
+{
+	struct login_a *head_a, *p;
+	char username[20];	//账号
+	char password[20];  //密码
+	head_a = NULL;
+	getchar();
+	printf("请输入用户名");
+	gets(username);
+	printf("请输入密码");
+	gets(password);
+	p = (struct login_a *)malloc(sizeof(struct login_a));
+	strcpy(p->username, username);
+	strcpy(p->password, password);
+	p->next = NULL;
+	head_a = p;
+	return head_a;
+}
+
+void insert_l_a(struct login_a *head_a)//增加管理员登录链表节点
+{
+	struct login_a *p, *q, *find1;
+	char username[20];
+	char password[20];
+	printf("请输入账号：");
+	scanf("%s", username);
+	int a = strlen(username);
+	while (a > 20 || a < 1)
+	{
+		printf("账号格式错误，请重新输入:");
+		scanf("%s", username);
+		a = strlen(username);
+	}
+	find1 = find_l(head_a, username);
+	while (find1 != NULL)
+	{
+		printf("此账号已存在，请重新输入!!!\n");
+		scanf("%s", username);
+		while (a > 20 || a < 1)
+		{
+			printf("账号格式错误，请重新输入:");
+			scanf("%s", username);
+			a = strlen(username);
+		}
+		find1 = find_l(head_a, username);
+	}
+	printf("请输入密码：");
+	scanf("%s", password);
+	a = strlen(password);
+	while (a > 20 || a < 1)
+	{
+		printf("密码格式错误，请重新输入:");
+		scanf("%s", password);
+		a = strlen(password);
+	}
+	p = (struct login_a *)malloc(sizeof(struct login_a));
+	q = (struct login_a *)malloc(sizeof(struct login_a));
+	q = head_a->next;
+	strcpy(p->username, username);
+	strcpy(p->password, password);
+	head_a->next = p;
+	p->next = q;
+}
+
+struct login_a *find_l(struct login_a *head_a, char username[20])//查询管理员登陆账号
+{
+	struct login_a *p;
+	p = (struct login_a *)malloc(sizeof(struct login_a));
+	int i = 0;
+	for (p = head_a; p != NULL; p = p->next)
+		if (!strcmp(username, p->username))
+		{
+			i = 1;
+			break;
+		}
+	if (i == 0)
+	{
+		p = NULL;
+	}
+	return p;
+}
+
+void delete_1(struct login_a *head_a, char username[20])//删除账户
+{
+	printf("此账号为%s", username);
+	struct login_a *p, *q;
+	p = (struct login_a *)malloc(sizeof(struct login_a));
+	q = head_a;
+	p = find_l(head_a, username);
+	while (strcmp(q->next->username, username))
+	{
+		q = q->next;
+	}
+	q->next = p->next;
+	free(p);
+}
+
+void change_l_a(struct login_a *head_a, char username[20])//修改管理员密码
+{
+	struct login_a *p;
+	p = (struct login_a *)malloc(sizeof(struct login_a));
+	p = find_l(head_a, username);
+	char password_o[20], password_n[20];
+	printf("请输入旧的密码:\n");
+	scanf("%s", password_o);
+	while (strcmp(p->password, password_o))
+	{
+		printf("密码输入错误，请重新输入\n");
+		scanf("%s", password_o);
+	}
+	printf("请输入新的密码:\n");
+	scanf("%s", password_n);
+	strcpy(p->password, password_n);
+	printf("密码修改成功!!!\n");
+	printf("按任意键返回\n");
+	getchar();
+}
+
+void save_2(struct login_a *head_a)//管理员登陆文件保存
+{
+	struct login_a *log, *p;
+	FILE *fp;
+	fp = fopen("d:/a.txt", "wt+");
+	log = p = head_a;
+	while (log)
+	{
+		p = log->next;
 		if (!p)
 		{
-			fprintf(fp, "%s\t%s", sta->USR,sta->PW);
+			fprintf(fp, "%s\t%s", log->username, log->password);
 			break;
 		}
-		fprintf(fp, "%s\t%s\n", sta->USR, sta->PW);
-		sta = sta->next;
+		fprintf(fp, "%s\t%s\n", log->username, log->password);
+		log = log->next;
 	}
+	printf("文件写入成功,请按任意键\n");
+	getchar();
 	fclose(fp);
 }
 
-STA_a *inf_s_a()  //部员账户-文件读取
+struct login_a *inf_l_a()//管理员密码文件信息录入链表
 {
-	STA_a *head_s_a, *p, *q;
-	head_s_a = q = (STA_a *)malloc(sizeof(STA_a));
-	head_s_a == NULL;
+	struct login_a *head_a, *r, *stu;
+	head_a = (struct login_a *)malloc(sizeof(struct login_a));
 	FILE *fp;
-	fp = fopen("d:/staff_a.txt", "rt+");
-	if (fp == NULL)
-	{
-		printf("d:/staff_a.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
+	printf("***********文件读入*************\n");
+	fp = fopen("d:/a.txt", "rt");
+	r = head_a;
 	while (!feof(fp))
 	{
-		p = (STA_a *)malloc(sizeof(STA_a));
-		fscanf(fp, "%s\t%s", p->USR, p->PW);
-		p->next = NULL;
-		if (head_s_a == NULL)
-			head_s_a = p;
-		else
-			q->next = p;
-		q = p;
+		stu = (struct login_a *)malloc(sizeof(struct login_a));
+		fscanf(fp, "%s %s", stu->username, stu->password);
+		r->next = stu;
+		r = stu;
 	}
+	r->next = NULL;
 	fclose(fp);
-	return head_s_a->next;
+	printf("文件读取成功！！\n");
+	printf("正在跳转，请稍后……\n");
+	Sleep(1000);
+	system("cls");
+	head_a = head_a->next;
+	return head_a;
 }
 
-void create_m(STA *head_s, STA_a *head_s_a) //部长-新建
+
+
+
+
+struct login_t *create_t()//创建老师登陆链表
 {
-	setbuf(stdin, NULL);
-	int i;
-	for (i = 0; i < 6; i++)
+	struct login_t *head_t, *p;
+	char username[20];	//账号
+	char password[20];  //密码
+	head_t = NULL;
+	getchar();
+	printf("请输入用户名");
+	gets(username);
+	printf("请输入密码");
+	gets(password);
+	p = (struct login_t *)malloc(sizeof(struct login_t));
+	strcpy(p->username, username);
+	strcpy(p->password, password);
+	p->next = NULL;
+	head_t = p;
+	return head_t;
+}
+
+void insert_l_t(struct login_t *head_t)//增加老师登录链表节点
+{
+	struct login_t *p, *q, *find1;
+	char username[20];
+	char password[20];
+	printf("请输入账号：");
+	scanf("%s", username);
+	int a = strlen(username);
+	while (a > 20 || a < 1)
 	{
-		head_s = inf_s();
-		head_s_a = inf_s_a();
-		char num[9];
-		printf("请输入需要担任部长的部员的学号\n");
-		scanf("%s", num);
-		STA *p1 = find_s(head_s, num);
-		while (p1 == NULL)
+		printf("账号格式错误，请重新输入:");
+		scanf("%s", username);
+		a = strlen(username);
+	}
+	find1 = find_2(head_t, username);
+	while (find1 != NULL)
+	{
+		printf("此账号已存在，请重新输入!!!\n");
+		scanf("%s", username);
+		while (a > 20 || a < 1)
 		{
-			printf("查无此人！！！\n");
-			Sleep(1000);
-			printf("请输入需要担任部长的部员的学号\n");
-			scanf("%s", num);
-			head_s = inf_s();
-			STA *p1 = find_s(head_s, num);
+			printf("账号格式错误，请重新输入:");
+			scanf("%s", username);
+			a = strlen(username);
 		}
-		strcpy(min[i].num, p1->num);
-		strcpy(min[i].name, p1->name);
-		strcpy(min[i].college, p1->college);
-		strcpy(min[i].class1, p1->class1);
-		min[i].day.year = p1->day.year;
-		min[i].day.month = p1->day.month;
-		min[i].day.day = p1->day.day;
-		strcpy(min[i].department, p1->department);
-		delete_s(head_s, head_s_a, num);
-		create_m_a(num, i);
-		printf("\n");
+		find1 = find_2(head_t, username);
 	}
-	save_m();
-	save_m_a();
+	printf("请输入密码：");
+	scanf("%s", password);
+	a = strlen(password);
+	while (a > 20 || a < 1)
+	{
+		printf("密码格式错误，请重新输入:");
+		scanf("%s", password);
+		a = strlen(password);
+	}
+	p = (struct login_t *)malloc(sizeof(struct login_t));
+	q = (struct login_t *)malloc(sizeof(struct login_t));
+	q = head_t->next;
+	strcpy(p->username, username);
+	strcpy(p->password, password);
+	head_t->next = p;
+	p->next = q;
 }
 
-void deleter_m(char num[]) //部长-删除
+struct login_t *find_2(struct login_t *head_t, char username[20])//查询老师登陆账号
 {
-	setbuf(stdin, NULL);
-	int j = find_m(num);
-	if (j == 6)
-	{
-		printf("查无此人!!!\n");
-	}
-	else
-	{
-		strcpy(min[j].num, " ");
-		strcpy(min[j].name, " " );
-		strcpy(min[j].college, " ");
-		strcpy(min[j].class1," ");
-		min[j].day.year = 0;
-		min[j].day.month = 0;
-		min[j].day.day = 0;
-		strcpy(min[j].department, " ");
-		deleter_m_a(num);
-		save_m_a();
-	}
-}
-
-/*
- * 返回值为6代表查无此人
- */
-int find_m(char num[]) //部长-查找
-{
-	int i, j = 0;
-	for (i = 0; i < 6; i++)
-	{
-		if (!strcmp(min[i].num, num))
+	struct login_t *p;
+	p = (struct login_t *)malloc(sizeof(struct login_t));
+	int i = 0;
+	for (p = head_t; p != NULL; p = p->next)
+		if (!strcmp(username, p->username))
 		{
-			j++;
+			i = 1;
 			break;
 		}
-	}
-	if (j = 0)
-		return 6;
-	else
-		return j;
-}
-
-void change_m(char num[]) //部长-修改
-{
-	setbuf(stdin, NULL);
-	int i = find_m(num);
-	printf("请输入学号\n");
-	scanf("%s", num);
-	printf("请输入姓名\n");
-	char name[9];	  //姓名
-	scanf("%s", name);
-	printf("请输入院系\n");
-	char college[21]; //院系
-	scanf("%s", &college);
-	printf("请输入班级\n");
-	char class1[9];   //班级
-	scanf("%s", class1);
-	printf("请输入出生年月日(yy mm dd)\n");
-	int year, month, day;
-	scanf("%d %d %d", &year, &month, &day);
-	printf("请输入部门\n");
-	char department[7];
-	strcpy(min[i].num, num);
-	strcpy(min[i].name, name);
-	strcpy(min[i].college, college);
-	strcpy(min[i].class1, class1);
-	min[i].day.year = year;
-	min[i].day.month = month;
-	min[i].day.day = day;
-	strcpy(min[i].department, department);
-	save_m();
-}
-
-void output_m() //部长-输出
-{
-	printf("学号\t姓名\t院系\t班级\t出生日期\t部门\n");
-	for (int i = 0; i < 6; i++)
+	if (i == 0)
 	{
-		printf("%s\t%s\t%s\t%s\t%d-%d-%d\t%s\n", min[i].num, min[i].name, min[i].college, min[i].class1, min[i].day.year, min[i].day.month, min[i].day.day, min[i].department);
+		p = NULL;
 	}
+	return p;
+}
+
+void delete_2(struct login_t *head_t, char username[20])//删除老师账户
+{
+	struct login_t *p, *q;
+	p = (struct login_t *)malloc(sizeof(struct login_t));
+	q = head_t;
+	p = find_2(head_t, username);
+	while (strcmp(q->next->username, username))
+	{
+		q = q->next;
+	}
+	q->next = p->next;
+	free(p);
+}
+
+void change_l_t(struct login_t *head_t, char username[20])//修改老师密码
+{
+	struct login_t *p;
+	p = (struct login_t *)malloc(sizeof(struct login_t));
+	p = find_2(head_t, username);
+	while (!p)
+	{
+		printf("账号输入错误，请重新输入\n");
+		scanf("%s", username);
+		p = find_2(head_t, username);
+	}
+	char password_o[20], password_n[20];
+	printf("请输入旧的密码:\n");
+	scanf("%s", password_o);
+	while (strcmp(p->password, password_o))
+	{
+		printf("密码输入错误，请重新输入\n");
+		scanf("%s", password_o);
+	}
+	printf("请输入新的密码:\n");
+	scanf("%s", password_n);
+	strcpy(p->password, password_n);
+	printf("密码修改成功!!!\n");
+	printf("按任意键返回\n");
 	getchar();
 }
 
-void save_m() //部长-文件保存
+void save_3(struct login_t *head_t)//老师登陆文件保存
 {
+	struct login_t *log, *p;
 	FILE *fp;
-	fp = fopen("d:/minister.txt", "wt+");
-	if (fp == NULL)
+	fp = fopen("d:/t.txt", "wt+");
+	log = p = head_t;
+	while (log)
 	{
-		printf("d:/minister.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	int i;
-	for (i = 0; i < 6; i++)
-	{
-		if (i == 5)
+		p = log->next;
+		if (!p)
 		{
-			fprintf(fp, "%s\t%s\t%s\t%s\t%d-%d-%d\t%s", min[i].num, min[i].name, min[i].college, \
-				min[i].class1, min[i].day.year, min[i].day.month, min[i].day.day, min[i].department);
-		}
-		else
-		{
-			fprintf(fp, "%s\t%s\t%s\t%s\t%d-%d-%d\t%s\n", min[i].num, min[i].name, min[i].college, \
-				min[i].class1, min[i].day.year, min[i].day.month, min[i].day.day, min[i].department);
-		}
-	}
-	fclose(fp);
-}
-
-void inf_m() //部长-文件读取
-{
-	FILE *fp;
-	fp = fopen("d:/minister.txt", "rt+");
-	if (fp == NULL)
-	{
-		printf("d:/minister.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	for (int i = 0; i < 6; i++)
-	{
-		fscanf(fp, "%s %s %s %s %d-%d-%d %s", min[i].num, min[i].name, min[i].college, \
-			min[i].class1, &min[i].day.year, &min[i].day.month, &min[i].day.day, min[i].department);
-	}
-	fclose(fp);
-}
-
-void create_m_a(char num[], int i) //部长账户-创建
-{
-	setbuf(stdin, NULL);
-	strcpy(min_a[i].USR, num);
-	char PW[20];
-	printf("请输入密码\n");
-	scanf("%s", PW);
-	getchar();
-	strcpy(min_a[i].PW, PW);
-}
-
-int find_m_a(char num[]) //部长账户-查找
-{
-	int i, j = 0;
-	for (i = 0; i < 6; i++)
-	{
-		if (!strcmp(min_a[i].USR, num))
-		{
-			j++;
+			fprintf(fp, "%s\t%s", log->username, log->password);
 			break;
 		}
+		fprintf(fp, "%s\t%s\n", log->username, log->password);
+		log = log->next;
 	}
-	if (j = 0)
-		return 6;
-	else
-		return j;
-}
-
-void change_m_a(char USR[]) //部长账号-修改
-{
-	setbuf(stdin, NULL);
-	int i = find_m_a(USR);
-	printf("请输入密码\n");
-	char PW[20];
-	scanf("%s", PW);
-	strcpy(min_a->PW, PW);
-	save_m_a();
-}
-
-void deleter_m_a(char num[]) //部长账号-删除
-{
-	int i = find_m_a(num);
-	strcpy(min_a[i].USR, " ");
-	strcpy(min_a[i].PW, " ");
-}
-
-void save_m_a() //部长账户-文件保存
-{
-	FILE *fp;
-	fp = fopen("d:/minister_a.txt", "wt+");
-	if (fp == NULL)
-	{
-		printf("minister_a_file文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	for (int i = 0; i < 6; i++)
-	{
-		if (i == 5)
-		{
-			fprintf(fp, "%s\t%s", min_a[i].USR, min_a[i].PW);
-		}
-		else
-		{
-			fprintf(fp, "%s\t%s\n", min_a[i].USR, min_a[i].PW);
-		}
-	}
-	fclose(fp);
-}
-
-void inf_m_a()  //部长账户-文件读取
-{
-	FILE *fp;
-	fp = fopen("d:/minister_a.txt", "rt+");
-	if (fp == NULL)
-	{
-		printf("d:/minister_a.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	for (int i = 0; i < 6; i++)
-	{
-		fscanf(fp, "%s\t%s", min_a[i].USR, min_a[i].PW);
-	}
-	fclose(fp);
-}
-
-void login_m(char USR[]) //部长-登录界面
-{
-	setbuf(stdin, NULL); 
-	char PW[20];
-	int i = find_m_a(USR);
-	if (i == 6)
-	{
-		printf("没有找到此账号\n退出中\n");
-		Sleep(1000);
-	}
-	printf("请输入密码\n");
-	scanf("%s", PW);
-	int count = 0;
-	count++;
-	while (strcmp(PW, min_a[i].PW))
-	{
-		printf("密码输入错误，还有%d次机会，请重新输入\n", 3 - count);
-		scanf("%s", PW);
-		count++;
-		getchar();
-		if (3 - count == 0)
-		{
-			printf("密码输入错误超过三次，正在退出系统!!!\n");
-			Sleep(1000);
-			exit(0);
-		}
-	}
-}
-
-void create_c() //主席-创建
-{
-	count_m = 1;
-	setbuf(stdin, NULL);
-	char num[9];
-	printf(" 请输入你需要添加到主席的学号\n");
-	scanf("%s", num);
-	int i = find_m(num);
-	if (i == 6)
-	{
-		printf("出无此人，返回上一步!!!\n");
-		Sleep(1000);
-	}
-	else
-	{
-		strcpy(chm.num, min[i].num);
-		strcpy(chm.name, min[i].name);
-		strcpy(chm.college, min[i].college);
-		strcpy(chm.class1, min[i].class1);
-		chm.day.year = min[i].day.year;
-		chm.day.month = min[i].day.month;
-		chm.day.day = min[i].day.day;
-		deleter_m(num);
-	}
-}
-
-void deleter_c() //主席-删除
-{
-	if (count_m == 1)
-	{
-		strcpy(chm.num, " ");
-		strcpy(chm.name, " ");
-		strcpy(chm.college, " ");
-		strcpy(chm.class1, " ");
-		chm.day.year = 0;
-		chm.day.month = 0;
-		chm.day.day = 0;
-	}
-	else
-		printf("查询不到主席信息，主席账号为0\n");
-}
-
-void change_c() //主席-修改
-{
-	printf("请输入学号\n");
-	char num[9]; //学号
-	scanf("%s", num);
-	printf("请输入姓名\n");
-	char name[9]; //姓名
-	scanf("%s", name);
-	printf("请输入院系\n");
-	char college[21]; //院系
-	scanf("%s", &college);
-	printf("请输入班级\n");
-	char class1[9]; //班级
-	scanf("%s", class1);
-	printf("请输入出生年月日(yy mm dd)\n");
-	int year, month, day;
-	scanf("%d %d %d", &year, &month, &day);
-	strcpy(chm.num, num);
-	strcpy(chm.name, name);
-	strcpy(chm.college, college);
-	strcpy(chm.class1, class1);
-	chm.day.year = year;
-	chm.day.month = month;
-	chm.day.day = day;
-}
-
-void save_c() //主席-文件保存
-{
-	FILE *fp;
-	fp = fopen("d:/champion.txt", "wt+");
-	if (fp == NULL)
-	{
-		printf("d:/champion.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	fprintf(fp, "%s\t%s\t%s\t%s\t%d-%d-%d", chm.num, chm.name, chm.college, chm.class1, chm.day.year, chm.day.month, chm.day.day);
-	fclose(fp);
-}
-
-void inf_c() //主席-文件读取
-{
-	FILE *fp;
-	fp = fopen("d:/champion.txt", "rt+");
-	if (fp == NULL)
-	{
-		printf("d:/champion.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	fscanf(fp, "%s\t%s\t%s\t%s\t%d-%d-%d", chm.num, chm.name, chm.college, chm.class1, &chm.day.year, &chm.day.month, &chm.day.day);
-	fclose(fp);
-}
-
-void login_c() //主席-登录界面
-{
-	setbuf(stdin, NULL);
-	char USR[9], PW[20];
-	printf("请输入账号\n");
-	scanf("%s", USR);
+	printf("文件写入成功,请按任意键\n");
 	getchar();
-	if (strcmp(USR, chm_a.USR))
-	{
-		printf("没有找到此账号\n退出中\n");
-		Sleep(1000);
-		exit(0);
-	}
-	printf("请输入密码\n");
-	scanf("%s", PW);
-	int count = 0;
-	count++;
-	while (strcmp(PW, chm_a.PW))
-	{
-		printf("密码输入错误，还有%d次机会，请重新输入\n", 3 - count);
-		scanf("%s", PW);
-		count++;
-		getchar();
-		if (count == 3)
-		{
-			printf("密码输入错误超过三次，正在退出系统!!!\n");
-			Sleep(1000);
-			exit(0);
-		}
-	}
-}
-
-void create(char num[]) // 主席账户-创建
-{
-	strcpy(chm_a.USR, num);
-	char PW[20];
-	printf("请输入密码\n");
-	scanf("%s", PW);
-	getchar();
-	strcpy(chm_a.PW, PW);
-}
-
-void deleter_c_a() //主席账户-删除
-{
-	strcpy(chm_a.USR, " ");
-	strcpy(chm_a.PW, " ");
-}
-
-void change_c_a() //主席账户-修改
-{
-	int count = 0;
-	setbuf(stdin, NULL);
-	char PW[20];
-	printf("请输入原密码");
-	scanf("%s", PW);
-	getchar();
-	count++;
-	while (strcmp(PW, chm_a.PW))
-	{
-		printf("密码输入错误，还有%d次机会，请重新输入\n", 3 - count);
-		scanf("%s", PW);
-		count++;
-		getchar();
-		if (3 - count == 0)
-		{
-			printf("密码输入错误超过三次，正在退出系统!!!\n");
-			Sleep(1000);
-			exit(0);
-		}
-	}
-	printf("请输入新的密码\n");
-	scanf("%s", PW);
-	strcpy(chm_a.PW, PW);
-}
-
-void save_c_a() //主席账户-文件保存
-{
-	FILE *fp;
-	fp = fopen("d:/champion_a.txt", "wt+");
-	if (fp == NULL)
-	{
-		printf("d:/champion_a.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
-	}
-	fprintf(fp, "%s\t%s", chm_a.USR, chm_a.PW);
 	fclose(fp);
 }
 
-void inf_c_a() //主席账户-文件读取
+struct login_t *inf_l_t()//老师密码文件信息录入链表
 {
+	struct login_t *head_t, *r, *stu;
+	head_t = (struct login_t *)malloc(sizeof(struct login_t));
 	FILE *fp;
-	fp = fopen("d:/champion_a.txt", "rt+");
-	if (fp == NULL)
+	printf("***********文件读入*************\n");
+	fp = fopen("d:/t.txt", "rt");
+	r = head_t;
+	while (!feof(fp))
 	{
-		printf("d:/champion_a.txt文件打开失败，请按回车退出系统！！");
-		getchar();
-		exit(0);
+		stu = (struct login_t *)malloc(sizeof(struct login_t));
+		fscanf(fp, "%s %s", stu->username, stu->password);
+		r->next = stu;
+		r = stu;
 	}
-	fscanf(fp, "%s %s", chm_a.USR, chm_a.PW);
+	r->next = NULL;
 	fclose(fp);
+	printf("文件读取成功！！\n");
+	printf("正在跳转，请稍后……\n");
+	Sleep(1000);
+	system("cls");
+	head_t = head_t->next;
+	return head_t;
 }
 
 int main()
 {
-	STA *head_s;
-	STA_a *head_s_a;
-	head_s = inf_s();
-	head_s_a = inf_s_a();
-	inf_m();
-	inf_m_a();
-	inf_c();
-	inf_c_a();
-	inf_su_a();
-	choose_1(head_s, head_s_a);
-	return 0;
+	struct student *head;
+	//head = NULL;
+	head = inf_1();
+	menu(head);
 }
